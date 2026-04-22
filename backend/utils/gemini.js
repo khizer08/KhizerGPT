@@ -1,33 +1,16 @@
 import "dotenv/config";
 import Thread from "../models/thread.js";
 
-const getGeminiAPIResponse = async (req, res) => {
-  const { message, threadId } = req.body;
-
+const getGeminiAPIResponse = async (message) => {
   try {
-    // 1. Find or create thread
-    let thread = await Thread.findOne({ threadId });
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: message }],
+      },
+    ];
 
-    if (!thread) {
-      thread = new Thread({
-        threadId,
-        messages: [],
-      });
-    }
-
-    // 2. Save user message
-    thread.messages.push({
-      role: "user",
-      content: message,
-    });
-
-    // 3. Format history for Gemini
-    const contents = thread.messages.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
-
-    // 4. Gemini API call
+    // 2. Gemini API call
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -41,39 +24,23 @@ const getGeminiAPIResponse = async (req, res) => {
             temperature: 0,
           },
         }),
-      }
+      },
     );
 
     const data = await response.json();
 
     if (data.error) {
-      return res.status(400).json({ error: data.error.message });
+      throw new Error(data.error.message);
     }
 
     const reply =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text)
-        .join(" ") || "No response";
+      data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join(" ") ||
+      "No response";
 
-    // 5. Save assistant response
-    thread.messages.push({
-      role: "assistant",
-      content: reply,
-    });
-
-    thread.updatedAt = Date.now();
-
-    await thread.save();
-
-    // 6. Send response
-    return res.json({
-      reply,
-      threadId: thread.threadId,
-    });
-
+    return reply;
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Something went wrong" });
+    throw err;
   }
 };
 
