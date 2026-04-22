@@ -1,5 +1,5 @@
 import "dotenv/config";
-import Thread from "../models/Thread.js";
+import Thread from "../models/thread.js";
 
 const getGeminiAPIResponse = async (req, res) => {
   const { message, threadId } = req.body;
