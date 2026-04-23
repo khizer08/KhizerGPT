@@ -1,5 +1,5 @@
 import express from "express";
-import Thread from "../models/thread.js";
+import Thread from "./models/thread.js";
 import getGeminiAPIResponse from "../utils/gemini.js";
 
 const router = express.Router();
