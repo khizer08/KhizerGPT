@@ -1,1 +1,1 @@
-# Full-Stack MERN project made with Gemini API
+# Full-Stack MERN project made with Gemini API key.
