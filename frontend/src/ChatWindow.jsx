@@ -11,17 +11,22 @@ function ChatWindow() {
     reply,
     setReply,
     currThreadId,
+    setCurrThreadId,
     setPrevChats,
     setNewChat,
   } = useContext(MyContext);
+
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const getReply = async () => {
+    if (!prompt.trim()) return;
+
     setLoading(true);
     setNewChat(false);
 
     console.log("message ", prompt, " threadId ", currThreadId);
+
     const options = {
       method: "POST",
       headers: {
@@ -36,15 +41,23 @@ function ChatWindow() {
     try {
       const response = await fetch("/api/chat", options);
       const res = await response.json();
+
       console.log(res);
+
       setReply(res.reply);
+
+      // IMPORTANT: store threadId after first message
+      if (!currThreadId && res.threadId) {
+        setCurrThreadId(res.threadId);
+      }
     } catch (err) {
       console.log(err);
     }
+
     setLoading(false);
   };
 
-  //Append new chat to prevChats
+  // Append new chat to prevChats
   useEffect(() => {
     if (prompt && reply) {
       setPrevChats((prevChats) => [
@@ -79,22 +92,24 @@ function ChatWindow() {
           </span>
         </div>
       </div>
+
       {isOpen && (
         <div className="dropDown">
           <div className="dropDownItem">
-            <i class="fa-solid fa-gear"></i> Settings
+            <i className="fa-solid fa-gear"></i> Settings
           </div>
           <div className="dropDownItem">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Upgrade plan
+            <i className="fa-solid fa-cloud-arrow-up"></i> Upgrade plan
           </div>
           <div className="dropDownItem">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Log out
+            <i className="fa-solid fa-arrow-right-from-bracket"></i> Log out
           </div>
         </div>
       )}
-      <Chat></Chat>
 
-      <ScaleLoader color="#fff" loading={loading}></ScaleLoader>
+      <Chat />
+
+      <ScaleLoader color="#fff" loading={loading} />
 
       <div className="chatInput">
         <div className="inputBox">
@@ -103,11 +118,12 @@ function ChatWindow() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => (e.key === "Enter" ? getReply() : "")}
-          ></input>
+          />
           <div id="submit" onClick={getReply}>
             <i className="fa-solid fa-paper-plane"></i>
           </div>
         </div>
+
         <p className="info">
           KhizerGPT can make mistakes. Check important info. See Cookie
           Preferences.

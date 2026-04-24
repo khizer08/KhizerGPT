@@ -1,6 +1,7 @@
 import express from "express";
 import Thread from "../models/thread.js";
 import getGeminiAPIResponse from "../utils/gemini.js";
+import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
 
@@ -19,11 +20,10 @@ router.post("/test", async (req, res) => {
   }
 });
 
-//get all threads
+// get all threads
 router.get("/thread", async (req, res) => {
   try {
     const threads = await Thread.find({}).sort({ updatedAt: -1 });
-    //descending order of updatedAt ...most recent data on top
     res.json(threads);
   } catch (err) {
     console.error(err);
@@ -31,7 +31,7 @@ router.get("/thread", async (req, res) => {
   }
 });
 
-//get all messages for a thread
+// get all messages for a thread
 router.get("/thread/:threadId", async (req, res) => {
   const { threadId } = req.params;
   try {
@@ -46,7 +46,7 @@ router.get("/thread/:threadId", async (req, res) => {
   }
 });
 
-//delete a thread and all its messages
+// delete a thread and all its messages
 router.delete("/thread/:threadId", async (req, res) => {
   try {
     const { threadId } = req.params;
@@ -62,33 +62,48 @@ router.delete("/thread/:threadId", async (req, res) => {
   }
 });
 
+// FIXED CHAT ROUTE
 router.post("/chat", async (req, res) => {
-  const { threadId, message } = req.body;
+  let { threadId, message } = req.body;
 
-  if (!threadId || !message) {
-    return res.status(400).json({ error: "missing required fields" });
+  // only message is required
+  if (!message) {
+    return res.status(400).json({ error: "missing message" });
   }
+
+  // generate threadId if not provided
+  if (!threadId) {
+    threadId = uuidv4();
+  }
+
   try {
     let thread = await Thread.findOne({ threadId });
+
     if (!thread) {
-      //create a new thread
       thread = new Thread({
         threadId,
         title: message,
         messages: [{ role: "user", content: message }],
       });
     } else {
-      //add message to existing thread
       thread.messages.push({ role: "user", content: message });
     }
+
     const assistantReply = await getGeminiAPIResponse(message);
-    thread.messages.push({ role: "assistant", content: assistantReply });
+
+    thread.messages.push({
+      role: "assistant",
+      content: assistantReply,
+    });
+
     thread.updatedAt = new Date();
 
     await thread.save();
 
+    // return threadId so frontend can store it
     res.json({
       reply: assistantReply,
+      threadId,
     });
   } catch (err) {
     console.error(err);
