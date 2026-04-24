@@ -17,25 +17,24 @@ const MessageSchema = new mongoose.Schema({
 });
 
 const ThreadSchema = new mongoose.Schema({
-    threadId:{
-        type: String,
-        required: true,
-        unique: true,
-    },
-    title:{
-        type: String,
-        default: "New Thread",
-    },
-    messages: [MessageSchema],
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
-    },
-
+  threadId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  title: {
+    type: String,
+    default: "New Thread",
+  },
+  messages: [MessageSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 export default mongoose.model("Thread", ThreadSchema);
